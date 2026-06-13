@@ -51,6 +51,10 @@
   .st-carry{background:#3d3520;color:var(--gold)}
   .match-body{padding:0 16px 16px;border-top:1px solid var(--line);display:none}
   .match.open .match-body{display:block}
+  .name-edit{display:flex;align-items:center;gap:10px;margin:14px 0 10px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px dashed var(--line)}
+  .name-edit-input{flex:1;min-width:160px;padding:8px 10px;font-size:15px;font-weight:700;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px}
+  .name-edit-input:focus{border-color:var(--accent);outline:none}
+  .name-edit-stage{padding:8px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-size:13px}
   .score-edit{display:flex;align-items:center;gap:10px;margin:14px 0;flex-wrap:wrap}
   .score-edit input{width:54px;padding:8px;text-align:center;font-size:18px;font-weight:800;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px}
   .score-edit .sep{font-size:20px;font-weight:800}
@@ -126,6 +130,9 @@
     .bet-cell .bn{font-size:11px}
     .bet-cell input{width:54px;padding:8px 5px;font-size:16px}
     .score-edit{gap:8px;margin:12px 0}
+    .name-edit{gap:8px}
+    .name-edit-input{font-size:16px;padding:10px;min-width:0}
+    .name-edit-stage{font-size:16px;padding:10px}
     .score-edit input{width:58px;padding:10px;font-size:20px}
     .bt-input{width:72px;font-size:16px;padding:9px}
     th,td{padding:9px 7px;font-size:13px}
@@ -529,6 +536,14 @@ function renderMatches(){
         ${statusHtml}
       </div>
       <div class="match-body">
+        <div class="name-edit">
+          <span style="color:var(--muted);font-size:13px">Nazwa meczu:</span>
+          <input id="nm-${m.id}" value="${esc(m.name)}" class="name-edit-input" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMatchName(${m.id});}">
+          <select id="ns-${m.id}" class="name-edit-stage">
+            ${['GRUPA','1/32','1/16','1/8','1/4','1/2','3 MIEJSCE','FINAŁ'].map(s=>`<option value="${s}" ${m.stage===s?'selected':''}>${s==='GRUPA'?'Faza grupowa':s}</option>`).join('')}
+          </select>
+          <button class="small" onclick="saveMatchName(${m.id})">Zapisz nazwę</button>
+        </div>
         <div class="score-edit">
           <span style="color:var(--muted);font-size:13px">Wynik meczu:</span>
           <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="r1-${m.id}" value="${m.result?(m.result.split('-')[0]||''):''}" oninput="liveScore(${m.id})" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('r2-${m.id}').focus();}" placeholder="–">
@@ -574,6 +589,16 @@ function addMatch(){
   save(); render(); toast('Mecz dodany ✓');
 }
 function deleteMatch(id){ if(!confirm('Usunąć ten mecz?'))return; state.matches=state.matches.filter(m=>m.id!==id); save(); render(); toast('Mecz usunięty'); }
+function saveMatchName(id){
+  const m=state.matches.find(x=>x.id===id); if(!m)return;
+  const nameEl=document.getElementById('nm-'+id), stageEl=document.getElementById('ns-'+id);
+  const newName=nameEl.value.trim();
+  if(!newName){ toast('Nazwa nie może być pusta',true); return; }
+  m.name=newName.toUpperCase();
+  m.stage=stageEl.value;
+  m._open=true;
+  save(); render(); toast('Nazwa meczu zmieniona ✓');
+}
 
 // ---- LEADERS ----
 function setLeaderWidth(w){
