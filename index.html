@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typer Mistrzostw – Pula meczowa</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2129; --panel2:#222c36; --line:#2e3a46;
+    --txt:#e8edf2; --muted:#8a97a5; --accent:#f5a623; --green:#2ecc71;
+    --red:#e74c3c; --blue:#4a9eff; --gold:#ffd166;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--txt);line-height:1.4;font-size:14px}
+  header{background:linear-gradient(135deg,#1a2129,#222c36);padding:18px 22px;border-bottom:2px solid var(--accent);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+  header h1{font-size:20px;letter-spacing:.5px}
+  header h1 span{color:var(--accent)}
+  .tabs{display:flex;gap:4px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab{padding:12px 20px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;font-weight:600;font-size:14px;white-space:nowrap}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab .t-short{display:none}
+  .th-short{display:none}
+  .tab:hover{color:var(--txt)}
+  .wrap{padding:20px;max-width:1400px;margin:0 auto}
+  .view{display:none}
+  .view.active{display:block}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  button{background:var(--accent);color:#1a1a1a;border:none;padding:9px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px}
+  button:hover{filter:brightness(1.1)}
+  button.ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+  button.danger{background:var(--red);color:#fff}
+  button.small{padding:5px 10px;font-size:12px}
+  .stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px;min-width:150px;flex:1}
+  .stat .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  .stat .val{font-size:24px;font-weight:800;margin-top:4px}
+  .match-list{display:flex;flex-direction:column;gap:10px}
+  .match{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .match.played{border-color:#3a4a3a}
+  .match.carry{border-left:4px solid var(--gold)}
+  .match-head{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;flex-wrap:wrap}
+  .match-head:hover{background:var(--panel2)}
+  .mnum{background:var(--panel2);color:var(--muted);border-radius:6px;padding:3px 9px;font-weight:700;font-size:12px;min-width:36px;text-align:center}
+  .mname{font-weight:700;font-size:15px;flex:1;min-width:140px}
+  .mresult{font-weight:800;font-size:16px;color:var(--accent);min-width:54px;text-align:center}
+  .mpool{font-size:12px;color:var(--muted);min-width:90px;text-align:right}
+  .mpool b{color:var(--gold);font-size:14px}
+  .mstatus{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:700;text-transform:uppercase}
+  .st-pending{background:#33404d;color:var(--muted)}
+  .st-won{background:#1e3a28;color:var(--green)}
+  .st-carry{background:#3d3520;color:var(--gold)}
+  .match-body{padding:0 16px 16px;border-top:1px solid var(--line);display:none}
+  .match.open .match-body{display:block}
+  .score-edit{display:flex;align-items:center;gap:10px;margin:14px 0;flex-wrap:wrap}
+  .score-edit input{width:54px;padding:8px;text-align:center;font-size:18px;font-weight:800;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px}
+  .score-edit .sep{font-size:20px;font-weight:800}
+  .winners-box{background:var(--bg);border-radius:8px;padding:12px;margin-top:10px;font-size:13px}
+  .winners-box .wlabel{color:var(--muted);font-size:11px;text-transform:uppercase;margin-bottom:6px}
+  .wchip{display:inline-block;background:#1e3a28;color:var(--green);padding:4px 10px;border-radius:20px;margin:3px;font-weight:700;font-size:12px}
+  .bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:8px}
+  .bet-cell{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+  .bet-cell.hit{border-color:var(--green);background:#15291c}
+  .bet-cell .bn{flex:1;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bet-cell input{width:48px;padding:5px;text-align:center;font-weight:700;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:5px;font-size:13px}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:10px;overflow:hidden}
+  th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:var(--panel2);color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;user-select:none}
+  th:hover{color:var(--txt)}
+  tr:last-child td{border-bottom:none}
+  td.num{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+  .pos{color:var(--muted);font-weight:700;width:40px}
+  .pos.gold{color:#ffd700}.pos.silver{color:#c0c0c0}.pos.bronze{color:#cd7f32}
+  .pos-amt{color:var(--green)}.neg-amt{color:var(--red)}
+  .wins-badge{background:var(--accent);color:#1a1a1a;border-radius:20px;padding:2px 9px;font-weight:800;font-size:12px}
+  .pname{font-weight:700}
+  .hint{color:var(--muted);font-size:12px;margin-bottom:14px;background:var(--panel);padding:12px 16px;border-radius:8px;border-left:3px solid var(--accent)}
+  .add-match{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--panel);padding:14px 16px;border-radius:10px;margin-bottom:16px;border:1px solid var(--line)}
+  .add-match input,.add-match select{padding:9px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-size:13px}
+  .add-match input.txt{flex:1;min-width:160px}
+  .filter-pills{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+  .pill{padding:6px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted)}
+  .pill.active{background:var(--accent);color:#1a1a1a;border-color:var(--accent)}
+  .pname-edit{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+  .pname-edit input{flex:1;padding:7px 10px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-size:13px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:12px 22px;border-radius:8px;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.4);opacity:0;transition:.3s;z-index:100;pointer-events:none}
+  .bt-input{width:80px;padding:7px;text-align:center;font-weight:700;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:5px;font-size:14px}
+  .bt-input:focus{border-color:var(--accent);outline:none}
+  tr.bt-hit{background:#15291c}
+  tr.bt-hit .bt-input{border-color:var(--green)}
+  .sc-table{border-collapse:collapse;background:var(--panel);min-width:100%}
+  .sc-table th,.sc-table td{border:1px solid var(--line);padding:8px 12px;text-align:center;font-size:13px}
+  .sc-table th.sc-name,.sc-table td.sc-name{text-align:left;font-weight:700;background:var(--panel2);position:sticky;left:0;white-space:nowrap}
+  .sc-table th.sc-match{background:var(--panel2);color:var(--accent);font-weight:700;white-space:nowrap;font-size:12px}
+  .sc-res{color:var(--gold);font-weight:800;font-size:13px}
+  .sc-table td.sc-bet{font-weight:700;font-variant-numeric:tabular-nums}
+  .sc-table td.sc-hit{background:#15291c;color:var(--green)}
+  #screen-capture{display:inline-block;padding:14px;background:var(--bg);border-radius:10px}
+  #leader-wrap{transition:max-width .15s ease}
+  #leader-table td,#leader-table th{white-space:nowrap}
+  #leader-table .pname{white-space:normal}
+  .toast.show{opacity:1}
+  .toast.err{background:var(--red)}
+  /* ====== TELEFON ====== */
+  @media(max-width:600px){
+    body{font-size:14px}
+    .wrap{padding:10px}
+    header{padding:10px 12px;gap:8px}
+    header h1{font-size:16px;letter-spacing:.3px}
+    #cloud-badge{font-size:11px;padding:5px 9px}
+    .tabs{flex-wrap:nowrap;padding:0 6px;gap:0}
+    .tab{padding:11px 12px;font-size:13px;border-bottom-width:3px}
+    .tab .t-full{display:none}.tab .t-short{display:inline}
+    .stat-row{gap:8px}
+    .stat{min-width:0;flex:1 1 calc(50% - 4px);padding:9px 11px;border-radius:8px}
+    .stat .label{font-size:10px}
+    .stat .val{font-size:18px;margin-top:2px}
+    .match-head{padding:11px 12px;gap:8px;row-gap:4px}
+    .mnum{min-width:28px;padding:3px 6px;font-size:11px}
+    .mname{font-size:14px;min-width:0;flex:1 1 60%}
+    .mresult{font-size:16px;min-width:42px}
+    .mpool{font-size:11px;min-width:0;flex:1 1 auto;text-align:left;order:3}
+    .mstatus{order:4;font-size:10px}
+    .match-body{padding:0 12px 14px}
+    .bets-grid{grid-template-columns:1fr 1fr;gap:6px}
+    .bet-cell{padding:7px 9px;gap:6px}
+    .bet-cell .bn{font-size:11px}
+    .bet-cell input{width:54px;padding:8px 5px;font-size:16px}
+    .score-edit{gap:8px;margin:12px 0}
+    .score-edit input{width:58px;padding:10px;font-size:20px}
+    .bt-input{width:72px;font-size:16px;padding:9px}
+    th,td{padding:9px 7px;font-size:13px}
+    .hint{font-size:12px;padding:10px 12px}
+    .add-match{flex-direction:column;align-items:stretch;padding:12px}
+    .add-match input,.add-match select{font-size:16px;padding:11px}
+    .add-match .filter-pills{margin-left:0;margin-top:4px}
+    .pill{padding:7px 12px}
+    button.small,.ghost.small{padding:8px 11px;font-size:12px}
+    .pname-edit input{font-size:16px;padding:10px}
+    .sc-table th,.sc-table td{padding:7px 9px;font-size:12px}
+    #view-leaders .bar{display:none}
+    #leader-wrap{max-width:100%!important}
+    /* tabela liderów: zmieść 5 kolumn na ekranie telefonu */
+    #leader-table{table-layout:fixed;width:100%}
+    #leader-table th,#leader-table td{padding:9px 4px;font-size:12px;white-space:normal}
+    #leader-table .th-full{display:none}#leader-table .th-short{display:inline}
+    #leader-table th:nth-child(1),#leader-table td:nth-child(1){width:30px;text-align:center}
+    #leader-table th:nth-child(2),#leader-table td:nth-child(2){width:auto}
+    #leader-table th:nth-child(3),#leader-table td:nth-child(3){width:34px}
+    #leader-table th:nth-child(4),#leader-table td:nth-child(4){width:64px}
+    #leader-table th:nth-child(5),#leader-table td:nth-child(5){width:64px}
+    #leader-table .pname{font-size:12px;line-height:1.25}
+    .wins-badge{padding:2px 6px;font-size:11px}
+    #leader-table .pos{width:30px}
+  }
+  @media(max-width:380px){
+    .bets-grid{grid-template-columns:1fr}
+    .stat{flex:1 1 100%}
+  }
+  @media(hover:none){
+    input,select,button{touch-action:manipulation}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>⚽ TYPER <span>MISTRZOSTW</span></h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span id="cloud-badge" style="font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;color:#cfd8e0;background:#33404d;white-space:nowrap">☁︎ chmura</span>
+    <button class="ghost small" onclick="cloudPull(true)">🔄 Odśwież</button>
+    <button class="ghost small" onclick="exportData()">💾 Eksport</button>
+    <button class="ghost small" onclick="document.getElementById('imp').click()">📂 Import</button>
+    <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
+    <button class="danger small" onclick="resetAll()">🗑 Reset</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-view="matches" onclick="switchTab('matches')"><span class="t-full">📋 Mecze</span><span class="t-short">📋 Mecze</span></div>
+  <div class="tab" data-view="bytyper" onclick="switchTab('bytyper')"><span class="t-full">✍️ Wpisz typy osoby</span><span class="t-short">✍️ Typy</span></div>
+  <div class="tab" data-view="leaders" onclick="switchTab('leaders')"><span class="t-full">🏆 Tabela liderów</span><span class="t-short">🏆 Liderzy</span></div>
+  <div class="tab" data-view="screen" onclick="switchTab('screen')"><span class="t-full">📸 Widok do screena</span><span class="t-short">📸 Screen</span></div>
+  <div class="tab" data-view="players" onclick="switchTab('players')"><span class="t-full">👥 Uczestnicy</span><span class="t-short">👥 Osoby</span></div>
+  <div class="tab" data-view="rules" onclick="switchTab('rules')"><span class="t-full">ℹ️ Zasady</span><span class="t-short">ℹ️ Zasady</span></div>
+</div>
+
+<div class="wrap">
+
+<!-- MATCHES -->
+<div class="view active" id="view-matches">
+  <div class="stat-row">
+    <div class="stat"><div class="label">Rozegrane mecze</div><div class="val" id="s-played">0</div></div>
+    <div class="stat"><div class="label">Pula do wygrania (kumulacja)</div><div class="val" id="s-carry" style="color:var(--gold)">0 zł</div></div>
+    <div class="stat"><div class="label">Stawka / mecz / os.</div><div class="val">5 zł</div></div>
+    <div class="stat"><div class="label">Pula pełnego meczu</div><div class="val" id="s-full">0 zł</div></div>
+  </div>
+
+  <div class="add-match">
+    <input class="txt" id="nm-name" placeholder="Nowy mecz, np. ARGENTYNA-FRANCJA">
+    <select id="nm-stage">
+      <option value="GRUPA">Faza grupowa</option>
+      <option value="1/32">1/32</option><option value="1/16">1/16</option>
+      <option value="1/8">1/8</option><option value="1/4">1/4</option>
+      <option value="1/2">1/2</option><option value="3 MIEJSCE">o 3. miejsce</option>
+      <option value="FINAŁ">Finał</option>
+    </select>
+    <button onclick="addMatch()">+ Dodaj mecz</button>
+    <div class="filter-pills" id="stage-filter"></div>
+  </div>
+
+  <div class="match-list" id="match-list"></div>
+</div>
+
+<!-- BY TYPER -->
+<div class="view" id="view-bytyper">
+  <div class="hint">Wybierz lub wyszukaj uczestnika i wpisz jego typy na wiele meczów naraz. Idealne, gdy ktoś przysłał wyniki na kilka kolejek do przodu. Zmiany zapisują się automatycznie.</div>
+  <div class="bar">
+    <input id="bt-search" placeholder="🔍 Szukaj uczestnika..." oninput="renderByTyper()" style="flex:1;min-width:200px;padding:10px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-size:14px">
+    <select id="bt-select" onchange="selectTyper(this.value)" style="padding:10px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-size:14px;min-width:200px"></select>
+  </div>
+  <div id="bt-content"></div>
+</div>
+
+<!-- LEADERS -->
+<div class="view" id="view-leaders">
+  <div class="hint">Saldo startowe każdego: <b>-520 zł</b> (104 mecze × 5 zł opłacone z góry). Z każdą wygraną saldo rośnie. Kliknij nagłówek kolumny, aby sortować.</div>
+  <div class="bar" style="align-items:center">
+    <label style="color:var(--muted);font-size:13px;white-space:nowrap">Szerokość tabeli:</label>
+    <input type="range" id="ld-width" min="380" max="1000" value="1000" step="10" oninput="setLeaderWidth(this.value)" style="flex:1;max-width:340px;accent-color:var(--accent)">
+    <span id="ld-width-val" style="color:var(--muted);font-size:12px;min-width:60px">pełna</span>
+    <button class="ghost small" onclick="document.getElementById('ld-width').value=1000;setLeaderWidth(1000)">Reset</button>
+  </div>
+  <div id="leader-wrap" style="max-width:1000px">
+    <table id="leader-table">
+      <thead><tr>
+        <th onclick="sortLeaders('pos')">#</th>
+        <th onclick="sortLeaders('name')">Uczestnik</th>
+        <th onclick="sortLeaders('wins')" style="text-align:right"><span class="th-full">Wygrane</span><span class="th-short">W</span></th>
+        <th onclick="sortLeaders('won')" style="text-align:right"><span class="th-full">Wygrane zł</span><span class="th-short">zł</span></th>
+        <th onclick="sortLeaders('saldo')" style="text-align:right">Saldo</th>
+      </tr></thead>
+      <tbody id="leader-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SCREEN -->
+<div class="view" id="view-screen">
+  <div class="hint">Wybierz, od którego meczu i ile meczów pokazać. Powstanie czytelna tabela (uczestnicy w wierszach, mecze w kolumnach) gotowa do zrzutu ekranu na Messengera.</div>
+  <div class="bar">
+    <label style="color:var(--muted);font-size:13px">Od meczu:</label>
+    <select id="sc-start" onchange="renderScreen()" style="padding:9px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-size:13px;max-width:280px"></select>
+    <label style="color:var(--muted);font-size:13px">Liczba meczów:</label>
+    <select id="sc-count" onchange="renderScreen()" style="padding:9px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-size:13px">
+      <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option>
+      <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+      <option value="8">8</option><option value="10">10</option>
+    </select>
+    <label style="color:var(--muted);font-size:13px;display:flex;align-items:center;gap:5px"><input type="checkbox" id="sc-onlynext" onchange="renderScreen()"> tylko nierozegrane</label>
+    <button class="ghost small" onclick="copyScreen()" style="margin-left:auto">📋 Kopiuj jako tekst</button>
+  </div>
+  <div id="screen-content" style="overflow-x:auto"></div>
+</div>
+
+<!-- PLAYERS -->
+<div class="view" id="view-players">
+  <div class="hint">Lista 20 uczestników. Możesz zmienić nazwy. Zmiana nazwy nie usuwa wpisanych typów.</div>
+  <div id="player-edit-list"></div>
+</div>
+
+<!-- RULES -->
+<div class="view" id="view-rules">
+  <div class="hint" style="border-left-color:var(--gold)">
+    <b style="color:var(--gold);font-size:14px">Jak to działa:</b><br><br>
+    • Każdy uczestnik typuje <b>dokładny wynik</b> meczu. Stawka to <b>5 zł</b> od osoby za mecz.<br>
+    • Pula pełnego meczu = liczba uczestników × 5 zł (przy 20 osobach = <b>100 zł</b>).<br>
+    • Kto trafi dokładny wynik — bierze <b>całą aktualną pulę</b> (z meczu + kumulacja z poprzednich).<br>
+    • Jeśli trafi <b>kilka osób</b> — pula dzieli się równo między nich.<br>
+    • Jeśli <b>nikt nie trafi</b> — cała pula meczu przechodzi (kumuluje się) na kolejny mecz.<br>
+    • <b>Saldo końcowe</b> = -520 zł (start) + suma wszystkich wygranych danej osoby.<br><br>
+    Wpisujesz wynik meczu i typy uczestników — narzędzie samo wylicza zwycięzców, rozdziela lub kumuluje pulę i aktualizuje tabelę liderów. Wszystko zapisuje się automatycznie w przeglądarce.
+  </div>
+</div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  KONFIGURACJA CHMURY (Supabase)
+//  Wklej tutaj dane z Supabase → Project Settings → API:
+const SUPABASE_URL = "https://wipqqjdcbzsmsqajacvi.supabase.co";      // np. https://xxxx.supabase.co
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpcHFxamRjYnpzbXNxYWphY3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNzQ5MDQsImV4cCI6MjA5Njk1MDkwNH0.4OjxeKe5rCIXRrzBFPfYgwFmrcBHUDovAwlBoGXiV6Q";    // długi token eyJ...
+const CLOUD_ROW_ID = "main";  // id wiersza w tabeli typer_state
+// ============================================================
+const CLOUD_ENABLED = SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY.length > 20;
+
+const STAKE = 5;
+const START_SALDO = -520;
+const STORE_KEY = 'typer_mistrzostw_v1';
+
+const DEFAULT_PLAYERS = ["OLIWIA","BARTEK JORGE","PAWEŁEK","KUBA DREGER","TOMEK ŚLIWA","MAREK BARTKIEWICZ","WOJTEK GAJEWSKI","PATRYK STYKAŁA","JAN BARTKIEWICZ","KUSOR","MACIEK MAZUR","OLA KAPERA","MATEUSZ ŁUKASZCZYK","EWELINA ŁUKASZCZYK","ROBERT KAPERA","IZOLDA","SAJMON","PAWEŁ GMER","MICHEL SZEF","MIŁOSZ GAJER"];
+const DEFAULT_MATCHES = ["MEKSYK-RPA","KOREA-CZECHY","KANADA-BiH","USA-PARGWAJ","KATAR-SZWAJCARIA","BRAZYLIA-MAROKO","HAITI-SZKOCJA","AUSTRALIA-TURCJA","NIEMCY-CURACAO","HOLANDIA-JAPONIA","WKS-EKWADOR","SZWECJA-TUNEZJA","HISZPANIA-RZP","BELGIA-EGIPT","AS-URUGWAJ","IRAN-NZ","FRANCJA-SENEGAL","IRAK-NORWEGIA","ARGENTYNA-ALGIERNIA","AUSTRIA-JORDANIA","PORTUGALIA-DR KONGA","ANGLIA-CHORWACJA","GHANA-PANAMA","UZBEKISTAN-KOLUMBIA","CZECHY-RPA","SZWAJCARIA-BiH","KANADA-KATAR","MEKSYK-KOREA","USA-AUSTRALIA","SZKOCJA-MAROKO","BRAZYLIA-HAITI","TURCJA-PARAGWAJ","HOLANDIA-SZWECJA","NIEMCY-WKS","EKWADOR-CURACAO","TUNEZJA-JAPONIA","HISZPANIA-AS","BELGIA-IRAN","URUGWAJ-RZP","NZ-EGIPT","ARGENTYNA-AUSTRIA","FRANCJA-IRAK","NORWEGIA-SENEGAL","JORDANIA-ALGIERNIA","PORTUGALIA-UZBEKISTAN","ANGLIA-GHANA","PANAMA-CHORWACJA","KOLUMBIA-DR KONGA","SZWAJCARIA-KANADA","BiH-KATAR","MAROKO-HAITI","SZKOCJA-BRAZYLIA","RPA-KOREA","CZECHY-MEKSYK","CURACAO-WKS","EKWADOR-NIEMCY","TUNEZJA-HOLANDIA","JAPONIA-SZWECJA","TURCJA-USA","PARAGWAJ-AUSTRALIA","NORWEGIA-FRANCJA","SENEGAL-IRAK","RZP-AS","URUGWAJ-HISZPANIA","NZ-BELGIA","EGIPT-IRAN","PANAMA-ANGLIA","CHORWACJA-GANA","KOLUMBIA-PORTUGALIA","DR KONGA-UZBEKISTAN","ALGIERNIA-AUSTRIA","JORDANIA-ARGENTYNA"];
+const DEFAULT_BETS = {"MEKSYK-RPA":{"OLIWIA":"0-0","BARTEK JORGE":"2-0","PAWEŁEK":"1-1","KUBA DREGER":"2-0","TOMEK ŚLIWA":"2-1","MAREK BARTKIEWICZ":"3-0","WOJTEK GAJEWSKI":"2-1","PATRYK STYKAŁA":"3-0","JAN BARTKIEWICZ":"2-0","KUSOR":"2-1","MACIEK MAZUR":"2-0","OLA KAPERA":"3-1","MATEUSZ ŁUKASZCZYK":"2-1","EWELINA ŁUKASZCZYK":"1-1","ROBERT KAPERA":"2-1","IZOLDA":"3-0","SAJMON":"3-0","PAWEŁ GMER":"1-1","MICHEL SZEF":"2-0","MIŁOSZ GAJER":"2-1"},"KOREA-CZECHY":{"OLIWIA":"0-1","BARTEK JORGE":"1-1","PAWEŁEK":"0-3","KUBA DREGER":"1-1","TOMEK ŚLIWA":"1-3","MAREK BARTKIEWICZ":"1-1","WOJTEK GAJEWSKI":"1-1","PATRYK STYKAŁA":"1-2","JAN BARTKIEWICZ":"1-1","KUSOR":"0-1","MACIEK MAZUR":"0-1","OLA KAPERA":"0-2","MATEUSZ ŁUKASZCZYK":"2-2","EWELINA ŁUKASZCZYK":"0-1","ROBERT KAPERA":"3-1","IZOLDA":"1-2","SAJMON":"3-2","PAWEŁ GMER":"2-2","MICHEL SZEF":"1-3","MIŁOSZ GAJER":"1-1"},"KANADA-BiH":{"OLIWIA":"1-1","BARTEK JORGE":"1-3","PAWEŁEK":"1-2","KUBA DREGER":"1-2","TOMEK ŚLIWA":"1-1","MAREK BARTKIEWICZ":"0-1","WOJTEK GAJEWSKI":"1-0","PATRYK STYKAŁA":"1-0","JAN BARTKIEWICZ":"2-1","KUSOR":"2-0","MACIEK MAZUR":"0-1","OLA KAPERA":"1-1","MATEUSZ ŁUKASZCZYK":"3-1","EWELINA ŁUKASZCZYK":"1-0","ROBERT KAPERA":"0-2","IZOLDA":"2-0","SAJMON":"1-0","PAWEŁ GMER":"2-1","MICHEL SZEF":"1-1","MIŁOSZ GAJER":"2-1"},"USA-PARGWAJ":{"OLIWIA":"2-1","BARTEK JORGE":"2-2","PAWEŁEK":"4-3","KUBA DREGER":"3-0","TOMEK ŚLIWA":"1-1","MAREK BARTKIEWICZ":"1-0","WOJTEK GAJEWSKI":"1-0","PATRYK STYKAŁA":"2-0","JAN BARTKIEWICZ":"2-2","KUSOR":"3-2","MACIEK MAZUR":"1-0","OLA KAPERA":"1-2","MATEUSZ ŁUKASZCZYK":"2-0","EWELINA ŁUKASZCZYK":"2-0","ROBERT KAPERA":"1-1","IZOLDA":"1-1","SAJMON":"2-0","PAWEŁ GMER":"2-0","MICHEL SZEF":"1-2","MIŁOSZ GAJER":"2-0"},"KATAR-SZWAJCARIA":{"OLIWIA":"1-1","BARTEK JORGE":"0-3","PAWEŁEK":"0-3","KUBA DREGER":"0-2","TOMEK ŚLIWA":"1-1","MAREK BARTKIEWICZ":"0-2","WOJTEK GAJEWSKI":"0-3","PATRYK STYKAŁA":"0-3","JAN BARTKIEWICZ":"0-2","KUSOR":"0-3","MACIEK MAZUR":"1-2","OLA KAPERA":"0-3","MATEUSZ ŁUKASZCZYK":"3-1","EWELINA ŁUKASZCZYK":"1-2","ROBERT KAPERA":"1-4","IZOLDA":"0-3","SAJMON":"1-4","PAWEŁ GMER":"0-2","MICHEL SZEF":"1-3","MIŁOSZ GAJER":"0-2"},"BRAZYLIA-MAROKO":{"OLIWIA":"3-2","BARTEK JORGE":"4-1","PAWEŁEK":"1-1","KUBA DREGER":"2-1","TOMEK ŚLIWA":"2-0","MAREK BARTKIEWICZ":"1-1","WOJTEK GAJEWSKI":"2-2","PATRYK STYKAŁA":"3-2","JAN BARTKIEWICZ":"1-0","KUSOR":"3-1","MACIEK MAZUR":"3-0","OLA KAPERA":"2-0","MATEUSZ ŁUKASZCZYK":"3-1","EWELINA ŁUKASZCZYK":"1-1","ROBERT KAPERA":"2-2","IZOLDA":"2-0","SAJMON":"3-0","PAWEŁ GMER":"2-0","MICHEL SZEF":"2-2","MIŁOSZ GAJER":"2-1"},"HAITI-SZKOCJA":{"OLIWIA":"0-1","BARTEK JORGE":"0-4","PAWEŁEK":"0-3","KUBA DREGER":"0-2","TOMEK ŚLIWA":"0-2","MAREK BARTKIEWICZ":"0-0","WOJTEK GAJEWSKI":"1-3","PATRYK STYKAŁA":"1-1","JAN BARTKIEWICZ":"0-2","KUSOR":"1-2","MACIEK MAZUR":"0-3","OLA KAPERA":"0-1","MATEUSZ ŁUKASZCZYK":"0-2","EWELINA ŁUKASZCZYK":"0-2","ROBERT KAPERA":"0-0","IZOLDA":"0-4","SAJMON":"0-2","PAWEŁ GMER":"1-2","MICHEL SZEF":"0-4","MIŁOSZ GAJER":"0-3"},"AUSTRALIA-TURCJA":{"OLIWIA":"0-0","BARTEK JORGE":"1-1","PAWEŁEK":"2-1","KUBA DREGER":"1-1","TOMEK ŚLIWA":"1-2","MAREK BARTKIEWICZ":"1-2","WOJTEK GAJEWSKI":"0-2","PATRYK STYKAŁA":"1-2","JAN BARTKIEWICZ":"1-2","KUSOR":"0-2","MACIEK MAZUR":"0-0","OLA KAPERA":"1-1","MATEUSZ ŁUKASZCZYK":"2-1","EWELINA ŁUKASZCZYK":"0-0","ROBERT KAPERA":"1-3","IZOLDA":"1-2","SAJMON":"1-3","PAWEŁ GMER":"1-3","MICHEL SZEF":"2-1","MIŁOSZ GAJER":"1-2"},"NIEMCY-CURACAO":{"OLIWIA":"3-0","BARTEK JORGE":"7-0","PAWEŁEK":"5-0","KUBA DREGER":"4-0","TOMEK ŚLIWA":"4-0","MAREK BARTKIEWICZ":"5-0","WOJTEK GAJEWSKI":"6-0","PATRYK STYKAŁA":"4-0","JAN BARTKIEWICZ":"6-0","KUSOR":"7-0","MACIEK MAZUR":"6-0","OLA KAPERA":"2-0","MATEUSZ ŁUKASZCZYK":"3-0","EWELINA ŁUKASZCZYK":"2-0","ROBERT KAPERA":"5-0","IZOLDA":"5-0","SAJMON":"5-0","PAWEŁ GMER":"5-0","MICHEL SZEF":"1-1","MIŁOSZ GAJER":"5-0"},"HOLANDIA-JAPONIA":{"OLIWIA":"1-0","BARTEK JORGE":"3-1","PAWEŁEK":"2-2","KUBA DREGER":"2-1","TOMEK ŚLIWA":"2-1","MAREK BARTKIEWICZ":"1-1","WOJTEK GAJEWSKI":"2-1","PATRYK STYKAŁA":"1-1","JAN BARTKIEWICZ":"2-2","KUSOR":"3-1","MACIEK MAZUR":"2-1","OLA KAPERA":"2-1","MATEUSZ ŁUKASZCZYK":"2-2","EWELINA ŁUKASZCZYK":"3-0","ROBERT KAPERA":"2-1","IZOLDA":"1-0","SAJMON":"2-1","PAWEŁ GMER":"2-1","MICHEL SZEF":"3-0","MIŁOSZ GAJER":"2-1"},"WKS-EKWADOR":{"KUBA DREGER":"1-1","TOMEK ŚLIWA":"1-2","MAREK BARTKIEWICZ":"2-2","OLA KAPERA":"0-0","IZOLDA":"0-1","SAJMON":"2-1","MICHEL SZEF":"1-0"},"SZWECJA-TUNEZJA":{"KUBA DREGER":"2-1","TOMEK ŚLIWA":"2-1","MAREK BARTKIEWICZ":"2-1","OLA KAPERA":"2-0","IZOLDA":"2-1","SAJMON":"2-0","MICHEL SZEF":"0-0"},"HISZPANIA-RZP":{"KUBA DREGER":"4-0","TOMEK ŚLIWA":"3-0","MAREK BARTKIEWICZ":"4-1","OLA KAPERA":"3-0","IZOLDA":"4-0","SAJMON":"3-1","MICHEL SZEF":"5-1"},"BELGIA-EGIPT":{"KUBA DREGER":"2-1","TOMEK ŚLIWA":"3-1","MAREK BARTKIEWICZ":"1-1","OLA KAPERA":"2-1","IZOLDA":"2-0","SAJMON":"2-0","MICHEL SZEF":"4-1"},"AS-URUGWAJ":{"KUBA DREGER":"0-2","TOMEK ŚLIWA":"2-2","MAREK BARTKIEWICZ":"1-3","OLA KAPERA":"0-2","IZOLDA":"0-1","SAJMON":"0-4","MICHEL SZEF":"0-0"},"IRAN-NZ":{"KUBA DREGER":"1-1","TOMEK ŚLIWA":"1-1","MAREK BARTKIEWICZ":"1-1","OLA KAPERA":"1-1","IZOLDA":"1-1","SAJMON":"0-2","MICHEL SZEF":"0-2"},"FRANCJA-SENEGAL":{"KUBA DREGER":"2-1","TOMEK ŚLIWA":"3-1","OLA KAPERA":"3-1","IZOLDA":"2-0","SAJMON":"3-0"},"IRAK-NORWEGIA":{"KUBA DREGER":"1-4","TOMEK ŚLIWA":"0-1","OLA KAPERA":"1-2","IZOLDA":"0-2","SAJMON":"1-3"},"ARGENTYNA-ALGIERNIA":{"KUBA DREGER":"3-1","TOMEK ŚLIWA":"3-1","OLA KAPERA":"3-1","IZOLDA":"3-0","SAJMON":"4-0"},"AUSTRIA-JORDANIA":{"KUBA DREGER":"2-0","TOMEK ŚLIWA":"2-1","OLA KAPERA":"1-0","IZOLDA":"1-0","SAJMON":"2-0"},"PORTUGALIA-DR KONGA":{"KUBA DREGER":"3-0","TOMEK ŚLIWA":"2-1","OLA KAPERA":"3-0","IZOLDA":"3-0","SAJMON":"4-0"},"ANGLIA-CHORWACJA":{"KUBA DREGER":"1-1","TOMEK ŚLIWA":"2-1","OLA KAPERA":"2-2","IZOLDA":"1-1","SAJMON":"2-3"},"GHANA-PANAMA":{"KUBA DREGER":"1-2","TOMEK ŚLIWA":"1-1","OLA KAPERA":"2-0","IZOLDA":"0-0","SAJMON":"2-2"},"UZBEKISTAN-KOLUMBIA":{"KUBA DREGER":"0-3","TOMEK ŚLIWA":"1-2","OLA KAPERA":"1-2","IZOLDA":"2-0","SAJMON":"0-3"},"CZECHY-RPA":{},"SZWAJCARIA-BiH":{},"KANADA-KATAR":{},"MEKSYK-KOREA":{},"USA-AUSTRALIA":{},"SZKOCJA-MAROKO":{},"BRAZYLIA-HAITI":{},"TURCJA-PARAGWAJ":{},"HOLANDIA-SZWECJA":{},"NIEMCY-WKS":{},"EKWADOR-CURACAO":{},"TUNEZJA-JAPONIA":{},"HISZPANIA-AS":{},"BELGIA-IRAN":{},"URUGWAJ-RZP":{},"NZ-EGIPT":{},"ARGENTYNA-AUSTRIA":{},"FRANCJA-IRAK":{},"NORWEGIA-SENEGAL":{},"JORDANIA-ALGIERNIA":{},"PORTUGALIA-UZBEKISTAN":{},"ANGLIA-GHANA":{},"PANAMA-CHORWACJA":{},"KOLUMBIA-DR KONGA":{},"SZWAJCARIA-KANADA":{},"BiH-KATAR":{},"MAROKO-HAITI":{},"SZKOCJA-BRAZYLIA":{},"RPA-KOREA":{},"CZECHY-MEKSYK":{},"CURACAO-WKS":{},"EKWADOR-NIEMCY":{},"TUNEZJA-HOLANDIA":{},"JAPONIA-SZWECJA":{},"TURCJA-USA":{},"PARAGWAJ-AUSTRALIA":{},"NORWEGIA-FRANCJA":{},"SENEGAL-IRAK":{},"RZP-AS":{},"URUGWAJ-HISZPANIA":{},"NZ-BELGIA":{},"EGIPT-IRAN":{},"PANAMA-ANGLIA":{},"CHORWACJA-GANA":{},"KOLUMBIA-PORTUGALIA":{},"DR KONGA-UZBEKISTAN":{},"ALGIERNIA-AUSTRIA":{},"JORDANIA-ARGENTYNA":{}};
+
+let state = load();
+save();
+let filterStage = 'ALL';
+let selectedTyper = null;
+let leaderSort = {key:'saldo', dir:-1};
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw){
+      const s = JSON.parse(raw);
+      // jednorazowe doczytanie typów z Excela do istniejącego zapisu
+      // (nie nadpisuje niczego, co już wpisano ręcznie)
+      if(!s._betsSeeded){
+        s.matches.forEach(m=>{
+          const src = DEFAULT_BETS[m.name];
+          if(src){ for(const p in src){ if(!(m.bets[p]||'').trim()) m.bets[p]=src[p]; } }
+        });
+        s._betsSeeded = true;
+      }
+      return s;
+    }
+  }catch(e){}
+  return {
+    players: DEFAULT_PLAYERS.slice(),
+    matches: DEFAULT_MATCHES.map((n,i)=>({id:i+1, name:n, stage:'GRUPA', result:null, bets:Object.assign({}, DEFAULT_BETS[n]||{})})),
+    _betsSeeded: true
+  };
+}
+function saveLocal(){ try{localStorage.setItem(STORE_KEY, JSON.stringify(state));}catch(e){} }
+function save(){ saveLocal(); cloudPushDebounced(); }
+
+// ---------- SYNCHRONIZACJA Z CHMURĄ ----------
+let cloudStatus = CLOUD_ENABLED ? 'init' : 'off';   // off | init | synced | saving | offline | error
+let lastCloudUpdatedAt = null;     // timestamp ostatniego stanu z chmury
+let pushTimer = null;
+let suppressPushUntil = 0;         // gdy świeżo pobraliśmy z chmury, nie odsyłaj od razu
+
+function cloudHeaders(){
+  return {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    'Content-Type': 'application/json'
+  };
+}
+function setCloudStatus(s){ cloudStatus=s; updateCloudBadge(); }
+function updateCloudBadge(){
+  const el=document.getElementById('cloud-badge'); if(!el)return;
+  const map={
+    off:   ['#33404d','☁︎ chmura wyłączona'],
+    init:  ['#33404d','☁︎ łączenie...'],
+    synced:['#1e3a28','✓ zsynchronizowano'],
+    saving:['#3d3520','↻ zapisywanie...'],
+    offline:['#4a2a2a','⚠ offline (lokalnie)'],
+    error: ['#4a2a2a','⚠ błąd chmury']
+  };
+  const [bg,txt]=map[cloudStatus]||map.off;
+  el.style.background=bg; el.textContent=txt;
+}
+
+// payload to zapisujemy w chmurze (bez pól tymczasowych jak _open)
+function cloudPayload(){
+  return {
+    players: state.players,
+    matches: state.matches.map(m=>({id:m.id,name:m.name,stage:m.stage,result:m.result,bets:m.bets})),
+    _betsSeeded: true
+  };
+}
+
+async function cloudPull(applyIfNewer){
+  if(!CLOUD_ENABLED) return;
+  try{
+    const url = SUPABASE_URL.replace(/\/$/,'') + '/rest/v1/typer_state?id=eq.' + encodeURIComponent(CLOUD_ROW_ID) + '&select=data,updated_at';
+    const r = await fetch(url, {headers: cloudHeaders()});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const rows = await r.json();
+    if(!rows || !rows.length){ // brak wiersza – utwórz z lokalnego stanu
+      await cloudInsert();
+      return;
+    }
+    const row = rows[0];
+    const remoteTs = row.updated_at;
+    const remoteData = row.data;
+    if(applyIfNewer && remoteData && remoteData.matches && remoteTs !== lastCloudUpdatedAt){
+      // ktoś inny zapisał nowszy stan – wczytaj, o ile nie jesteśmy w trakcie własnej edycji
+      if(document.activeElement && document.activeElement.tagName==='INPUT'){
+        // nie podmieniaj w trakcie pisania – spróbujemy przy kolejnym cyklu
+      } else {
+        mergeRemote(remoteData);
+        lastCloudUpdatedAt = remoteTs;
+        suppressPushUntil = Date.now()+1500;
+        saveLocal();
+        render(); restoreLeaderWidth();
+        setCloudStatus('synced');
+        return;
+      }
+    }
+    lastCloudUpdatedAt = remoteTs;
+    if(cloudStatus!=='saving') setCloudStatus('synced');
+  }catch(e){
+    setCloudStatus(navigator.onLine ? 'error' : 'offline');
+  }
+}
+
+function mergeRemote(d){
+  // ostatni zapis wygrywa: bierzemy zdalny stan w całości,
+  // zachowując lokalne pola UI (_open) tam gdzie mecz istnieje
+  const openMap={}; state.matches.forEach(m=>{ if(m._open) openMap[m.id]=true; });
+  state.players = d.players.slice();
+  state.matches = d.matches.map(m=>({id:m.id,name:m.name,stage:m.stage||'GRUPA',result:m.result??null,bets:Object.assign({},m.bets||{}),_open:!!openMap[m.id]}));
+}
+
+async function cloudInsert(){
+  try{
+    const url = SUPABASE_URL.replace(/\/$/,'') + '/rest/v1/typer_state';
+    const r = await fetch(url, {method:'POST', headers: Object.assign(cloudHeaders(),{'Prefer':'resolution=merge-duplicates,return=representation'}), body: JSON.stringify({id:CLOUD_ROW_ID, data: cloudPayload()})});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const rows=await r.json();
+    if(rows&&rows[0]) lastCloudUpdatedAt=rows[0].updated_at;
+    setCloudStatus('synced');
+  }catch(e){ setCloudStatus(navigator.onLine?'error':'offline'); }
+}
+
+function cloudPushDebounced(){
+  if(!CLOUD_ENABLED) return;
+  setCloudStatus('saving');
+  if(pushTimer) clearTimeout(pushTimer);
+  pushTimer = setTimeout(cloudPush, 700);
+}
+async function cloudPush(){
+  if(!CLOUD_ENABLED) return;
+  if(Date.now() < suppressPushUntil){ setCloudStatus('synced'); return; }
+  try{
+    const url = SUPABASE_URL.replace(/\/$/,'') + '/rest/v1/typer_state?id=eq.' + encodeURIComponent(CLOUD_ROW_ID);
+    const r = await fetch(url, {method:'PATCH', headers: Object.assign(cloudHeaders(),{'Prefer':'return=representation'}), body: JSON.stringify({data: cloudPayload(), updated_at: new Date().toISOString()})});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const rows=await r.json();
+    if(rows&&rows[0]){ lastCloudUpdatedAt=rows[0].updated_at; }
+    setCloudStatus('synced');
+  }catch(e){
+    setCloudStatus(navigator.onLine?'error':'offline');
+  }
+}
+
+function startCloudSync(){
+  if(!CLOUD_ENABLED){ updateCloudBadge(); return; }
+  // pierwszy pull – pobierz stan z chmury i nadpisz lokalny jeśli istnieje
+  cloudPull(true);
+  // okresowe sprawdzanie zmian od innych adminów
+  setInterval(()=>{ if(cloudStatus!=='saving') cloudPull(true); }, 5000);
+  window.addEventListener('online', ()=>{ setCloudStatus('init'); cloudPull(true); });
+  window.addEventListener('offline', ()=> setCloudStatus('offline'));
+}
+
+
+function toast(msg,err){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(err?' err':'');
+  setTimeout(()=>t.className='toast',1800);
+}
+
+// ---- CORE: compute pool carry-over + per-player results ----
+function compute(){
+  const wins = {}, won = {};
+  state.players.forEach(p=>{wins[p]=0; won[p]=0;});
+  let carry = 0;
+  const perMatch = [];
+  for(const m of state.matches){
+    const fullPool = state.players.length * STAKE;
+    const poolAtStake = fullPool + carry;
+    let winners = [], share = 0, status = 'pending';
+    if(m.result && /^\d+-\d+$/.test(m.result.trim())){
+      const res = m.result.trim();
+      winners = state.players.filter(p => (m.bets[p]||'').trim() === res);
+      if(winners.length>0){
+        status='won';
+        share = poolAtStake / winners.length;
+        winners.forEach(w=>{ won[w]+=share; wins[w]+=1; });
+        carry = 0;
+      } else {
+        status='carry';
+        carry = poolAtStake;
+      }
+    }
+    perMatch.push({fullPool, poolAtStake, winners, share, status, carryAfter:carry});
+  }
+  const leaders = state.players.map(p=>({
+    name:p, wins:wins[p], won:won[p], saldo: START_SALDO + won[p]
+  }));
+  return {perMatch, leaders, carry};
+}
+
+// ---- RENDER MATCHES ----
+function renderStageFilter(){
+  const stages = ['ALL', ...new Set(state.matches.map(m=>m.stage))];
+  const labels={'ALL':'Wszystkie','GRUPA':'Grupa'};
+  document.getElementById('stage-filter').innerHTML = stages.map(s=>
+    `<div class="pill ${filterStage===s?'active':''}" onclick="setFilter('${s}')">${labels[s]||s}</div>`).join('');
+}
+function setFilter(s){ filterStage=s; render(); }
+
+function renderMatches(){
+  const c = compute();
+  document.getElementById('s-played').textContent = state.matches.filter(m=>m.result&&/^\d+-\d+$/.test(m.result)).length + ' / ' + state.matches.length;
+  document.getElementById('s-carry').textContent = fmt(c.carry)+' zł';
+  document.getElementById('s-full').textContent = fmt(state.players.length*STAKE)+' zł';
+
+  const list = document.getElementById('match-list');
+  let html='';
+  state.matches.forEach((m,idx)=>{
+    if(filterStage!=='ALL' && m.stage!==filterStage) return;
+    const pm = c.perMatch[idx];
+    const opened = m._open ? 'open':'';
+    let statusHtml, cls='';
+    if(pm.status==='won'){ statusHtml='<span class="mstatus st-won">✓ trafione</span>'; cls='played'; }
+    else if(pm.status==='carry'){ statusHtml='<span class="mstatus st-carry">↻ kumulacja</span>'; cls='played carry'; }
+    else { statusHtml='<span class="mstatus st-pending">oczekuje</span>'; }
+
+    html+=`<div class="match ${cls} ${opened}" id="m-${m.id}">
+      <div class="match-head" onclick="toggleMatch(${m.id})">
+        <span class="mnum">${idx+1}</span>
+        <span class="mname">${esc(m.name)}${m.stage!=='GRUPA'?' <span style="color:var(--muted);font-weight:400">('+m.stage+')</span>':''}</span>
+        <span class="mresult">${m.result&&/^\d+-\d+$/.test(m.result)?esc(m.result):'–'}</span>
+        <span class="mpool">pula: <b>${fmt(pm.poolAtStake)} zł</b></span>
+        ${statusHtml}
+      </div>
+      <div class="match-body">
+        <div class="score-edit">
+          <span style="color:var(--muted);font-size:13px">Wynik meczu:</span>
+          <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="r1-${m.id}" value="${m.result?(m.result.split('-')[0]||''):''}" oninput="liveScore(${m.id})" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('r2-${m.id}').focus();}" placeholder="–">
+          <span class="sep">:</span>
+          <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="r2-${m.id}" value="${m.result?(m.result.split('-')[1]||''):''}" oninput="liveScore(${m.id})" onkeydown="if(event.key==='Enter'){event.preventDefault();saveScore(${m.id});}" placeholder="–">
+          <button class="small" onclick="saveScore(${m.id})">Zapisz wynik</button>
+          ${m.result?`<button class="ghost small" onclick="clearScore(${m.id})">Wyczyść</button>`:''}
+          <button class="danger small" style="margin-left:auto" onclick="deleteMatch(${m.id})">Usuń mecz</button>
+        </div>
+        ${pm.status==='won'?`<div class="winners-box"><div class="wlabel">Zwycięzcy — każdy dostaje ${fmt(pm.share)} zł</div>${pm.winners.map(w=>`<span class="wchip">${esc(w)} +${fmt(pm.share)} zł</span>`).join('')}</div>`:''}
+        ${pm.status==='carry'?`<div class="winners-box"><div class="wlabel" style="color:var(--gold)">Nikt nie trafił — ${fmt(pm.poolAtStake)} zł przechodzi na kolejny mecz</div></div>`:''}
+        <div style="margin-top:14px"><div class="wlabel" style="color:var(--muted);font-size:11px;text-transform:uppercase;margin-bottom:6px">Typy uczestników:</div>
+        <div class="bets-grid">
+          ${state.players.map(p=>{
+            const bet=m.bets[p]||'';
+            const hit = m.result&&/^\d+-\d+$/.test(m.result)&&bet.trim()===m.result.trim();
+            return `<div class="bet-cell ${hit?'hit':''}"><span class="bn">${esc(p)}</span><input data-betinput inputmode="text" autocapitalize="off" autocomplete="off" enterkeyhint="next" value="${esc(bet)}" placeholder="0-0" onkeydown="betKeyNav(event)" onchange="setBet(${m.id},'${escAttr(p)}',this.value)"></div>`;
+          }).join('')}
+        </div></div>
+      </div>
+    </div>`;
+  });
+  list.innerHTML = html || '<div class="hint">Brak meczów dla tego filtra.</div>';
+}
+
+function toggleMatch(id){ const m=state.matches.find(x=>x.id===id); m._open=!m._open; renderMatches(); }
+function liveScore(id){ /* no-op, just keeps inputs responsive */ }
+function saveScore(id){
+  const m=state.matches.find(x=>x.id===id);
+  const a=document.getElementById('r1-'+id).value, b=document.getElementById('r2-'+id).value;
+  if(a===''||b===''){ toast('Wpisz oba wyniki',true); return; }
+  m.result = parseInt(a)+'-'+parseInt(b); m._open=true; save(); render(); toast('Wynik zapisany ✓');
+}
+function clearScore(id){ const m=state.matches.find(x=>x.id===id); m.result=null; m._open=true; save(); render(); toast('Wynik wyczyszczony'); }
+function setBet(id,player,val){ const m=state.matches.find(x=>x.id===id); m.bets[player]=val.trim(); save(); renderMatches(); renderLeaders(); }
+function addMatch(){
+  const name=document.getElementById('nm-name').value.trim();
+  const stage=document.getElementById('nm-stage').value;
+  if(!name){ toast('Wpisz nazwę meczu',true); return; }
+  const id=Math.max(0,...state.matches.map(m=>m.id))+1;
+  state.matches.push({id, name:name.toUpperCase(), stage, result:null, bets:{}, _open:true});
+  document.getElementById('nm-name').value='';
+  save(); render(); toast('Mecz dodany ✓');
+}
+function deleteMatch(id){ if(!confirm('Usunąć ten mecz?'))return; state.matches=state.matches.filter(m=>m.id!==id); save(); render(); toast('Mecz usunięty'); }
+
+// ---- LEADERS ----
+function setLeaderWidth(w){
+  w=parseInt(w);
+  document.getElementById('leader-wrap').style.maxWidth = w+'px';
+  document.getElementById('ld-width-val').textContent = w>=1000 ? 'pełna' : w+' px';
+  try{ localStorage.setItem('typer_leader_width', w); }catch(e){}
+}
+function restoreLeaderWidth(){
+  let w=1000;
+  try{ const s=localStorage.getItem('typer_leader_width'); if(s) w=parseInt(s); }catch(e){}
+  const sl=document.getElementById('ld-width'); if(sl) sl.value=w;
+  setLeaderWidth(w);
+}
+function sortLeaders(key){
+  if(leaderSort.key===key) leaderSort.dir*=-1;
+  else leaderSort={key, dir: key==='name'?1:-1};
+  renderLeaders();
+}
+function renderLeaders(){
+  const c = compute();
+  let rows = c.leaders.slice();
+  rows.sort((a,b)=> b.saldo-a.saldo || b.won-a.won);
+  rows.forEach((r,i)=>r.pos=i+1);
+  const k=leaderSort.key, d=leaderSort.dir;
+  rows.sort((a,b)=>{
+    if(k==='name') return a.name.localeCompare(b.name)*d;
+    if(k==='pos') return (a.pos-b.pos)*d;
+    return (a[k]-b[k])*d;
+  });
+  document.getElementById('leader-body').innerHTML = rows.map(r=>{
+    const medal = r.pos===1?'gold':r.pos===2?'silver':r.pos===3?'bronze':'';
+    return `<tr>
+      <td class="pos ${medal}">${r.pos===1?'🥇':r.pos===2?'🥈':r.pos===3?'🥉':r.pos}</td>
+      <td class="pname">${esc(r.name)}</td>
+      <td class="num"><span class="wins-badge">${r.wins}</span></td>
+      <td class="num pos-amt">${r.won>0?'+'+fmt(r.won)+' zł':'0 zł'}</td>
+      <td class="num ${r.saldo>=0?'pos-amt':'neg-amt'}">${fmt(r.saldo)} zł</td>
+    </tr>`;
+  }).join('');
+}
+
+// ---- PLAYERS ----
+function renderPlayers(){
+  document.getElementById('player-edit-list').innerHTML = state.players.map((p,i)=>
+    `<div class="pname-edit"><span style="color:var(--muted);width:28px">${i+1}.</span><input value="${esc(p)}" onchange="renamePlayer(${i},this.value)"></div>`).join('');
+}
+function renamePlayer(i,val){
+  const old=state.players[i], nw=val.trim().toUpperCase();
+  if(!nw){ toast('Nazwa nie może być pusta',true); renderPlayers(); return; }
+  state.players[i]=nw;
+  state.matches.forEach(m=>{ if(m.bets[old]!==undefined){ m.bets[nw]=m.bets[old]; if(nw!==old) delete m.bets[old]; }});
+  save(); render(); toast('Nazwa zmieniona ✓');
+}
+
+// ---- BY TYPER (wpisywanie typów jednej osoby na wiele meczów) ----
+function selectTyper(name){ selectedTyper = name || null; renderByTyper(); }
+function renderByTyper(){
+  const search = (document.getElementById('bt-search').value||'').toLowerCase().trim();
+  const matchedPlayers = state.players.filter(p=>p.toLowerCase().includes(search));
+  if(selectedTyper && !state.players.includes(selectedTyper)) selectedTyper=null;
+  if(!selectedTyper && matchedPlayers.length>0 && search) selectedTyper=matchedPlayers[0];
+
+  const sel=document.getElementById('bt-select');
+  sel.innerHTML = '<option value="">— wybierz uczestnika —</option>' +
+    matchedPlayers.map(p=>`<option value="${escAttr(p)}" ${p===selectedTyper?'selected':''}>${esc(p)}</option>`).join('');
+
+  const box=document.getElementById('bt-content');
+  if(!selectedTyper){ box.innerHTML='<div class="hint">Wybierz uczestnika z listy powyżej, aby wpisać jego typy.</div>'; return; }
+
+  const c = compute();
+  let filled=0, hits=0;
+  let rowsHtml='';
+  state.matches.forEach((m,idx)=>{
+    const bet = m.bets[selectedTyper]||'';
+    const hasResult = m.result&&/^\d+-\d+$/.test(m.result);
+    const hit = hasResult && bet.trim()===m.result.trim();
+    const isWinner = c.perMatch[idx].winners.includes(selectedTyper);
+    if(bet.trim()) filled++;
+    if(isWinner) hits++;
+    rowsHtml+=`<tr class="${hit?'bt-hit':''}">
+      <td class="pos">${idx+1}</td>
+      <td class="pname">${esc(m.name)}${m.stage!=='GRUPA'?` <span style="color:var(--muted);font-weight:400">(${m.stage})</span>`:''}</td>
+      <td style="text-align:center;font-weight:800;color:var(--accent)">${hasResult?esc(m.result):'–'}</td>
+      <td style="width:90px"><input class="bt-input" data-betinput inputmode="text" autocapitalize="off" autocomplete="off" enterkeyhint="next" value="${esc(bet)}" placeholder="0-0" onkeydown="betKeyNav(event)" onchange="setBetByTyper(${m.id},this.value)"></td>
+      <td style="text-align:center">${isWinner?`<span class="wchip">✓ +${fmt(c.perMatch[idx].share)} zł</span>`:(hasResult?'<span style="color:var(--muted)">—</span>':'')}</td>
+    </tr>`;
+  });
+
+  const ld = c.leaders.find(l=>l.name===selectedTyper);
+  box.innerHTML=`
+    <div class="stat-row">
+      <div class="stat"><div class="label">Wpisane typy</div><div class="val">${filled} / ${state.matches.length}</div></div>
+      <div class="stat"><div class="label">Trafione mecze</div><div class="val" style="color:var(--green)">${hits}</div></div>
+      <div class="stat"><div class="label">Suma wygranych</div><div class="val" style="color:var(--green)">${ld?(ld.won>0?'+'+fmt(ld.won):'0'):'0'} zł</div></div>
+      <div class="stat"><div class="label">Saldo końcowe</div><div class="val" style="color:${ld&&ld.saldo>=0?'var(--green)':'var(--red)'}">${ld?fmt(ld.saldo):START_SALDO} zł</div></div>
+    </div>
+    <table>
+      <thead><tr><th style="width:40px">#</th><th>Mecz</th><th style="text-align:center;width:70px">Wynik</th><th style="width:90px">Typ osoby</th><th style="text-align:center;width:120px">Status</th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`;
+}
+function setBetByTyper(matchId,val){
+  const m=state.matches.find(x=>x.id===matchId);
+  m.bets[selectedTyper]=val.trim();
+  save(); renderByTyper(); renderMatches(); renderLeaders();
+}
+
+// Tab / Enter / strzałki przeskakują między polami typów
+function betKeyNav(e){
+  const isTab = e.key==='Tab' && !e.shiftKey;
+  const isShiftTab = e.key==='Tab' && e.shiftKey;
+  if(e.key!=='Enter' && e.key!=='ArrowDown' && e.key!=='ArrowUp' && !isTab && !isShiftTab) return;
+  e.preventDefault();
+  const inputs=[...document.querySelectorAll('input[data-betinput]')];
+  const i=inputs.indexOf(e.target);
+  if(i===-1)return;
+  const goPrev = (e.key==='ArrowUp' || isShiftTab);
+  const targetIdx = goPrev ? i-1 : i+1;
+  e.target.blur(); // zapisuje wartość (onchange może przerysować listę)
+  // po ewentualnym przerysowaniu odpytujemy pola na nowo i skaczemy po indeksie
+  requestAnimationFrame(()=>{
+    const fresh=[...document.querySelectorAll('input[data-betinput]')];
+    const next=fresh[targetIdx];
+    if(next){ next.focus(); next.select(); }
+  });
+}
+
+// ---- WIDOK DO SCREENA ----
+function renderScreen(){
+  const startSel=document.getElementById('sc-start');
+  // populate start dropdown if empty / stale
+  const desired = state.matches.map((m,i)=>`${i+1}. ${m.name}`).join('|');
+  if(startSel.dataset.sig!==desired){
+    startSel.dataset.sig=desired;
+    startSel.innerHTML = state.matches.map((m,i)=>`<option value="${i}">${i+1}. ${esc(m.name)}</option>`).join('');
+  }
+  const onlyNext=document.getElementById('sc-onlynext').checked;
+  let startIdx=parseInt(startSel.value)||0;
+  const count=parseInt(document.getElementById('sc-count').value)||3;
+
+  let pool = state.matches.map((m,i)=>({m,i}));
+  if(onlyNext) pool = pool.filter(x=>!(x.m.result&&/^\d+-\d+$/.test(x.m.result)));
+  else pool = pool.filter(x=>x.i>=startIdx);
+  const shown = pool.slice(0, count);
+
+  const box=document.getElementById('screen-content');
+  if(shown.length===0){ box.innerHTML='<div class="hint">Brak meczów do pokazania.</div>'; return; }
+
+  let head='<th class="sc-name">Uczestnik</th>'+shown.map(x=>`<th class="sc-match">${esc(x.m.name)}${x.m.result&&/^\d+-\d+$/.test(x.m.result)?`<br><span class="sc-res">${esc(x.m.result)}</span>`:''}</th>`).join('');
+  let body=state.players.map(p=>{
+    const cells=shown.map(x=>{
+      const bet=(x.m.bets[p]||'').trim();
+      const hasRes=x.m.result&&/^\d+-\d+$/.test(x.m.result);
+      const hit=hasRes&&bet===x.m.result.trim();
+      return `<td class="sc-bet ${hit?'sc-hit':''}">${bet?esc(bet):'<span style="color:#55606b">–</span>'}</td>`;
+    }).join('');
+    return `<tr><td class="sc-name">${esc(p)}</td>${cells}</tr>`;
+  }).join('');
+
+  box.innerHTML=`<div id="screen-capture"><table class="sc-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+function copyScreen(){
+  const startSel=document.getElementById('sc-start');
+  const onlyNext=document.getElementById('sc-onlynext').checked;
+  let startIdx=parseInt(startSel.value)||0;
+  const count=parseInt(document.getElementById('sc-count').value)||3;
+  let pool = state.matches.map((m,i)=>({m,i}));
+  if(onlyNext) pool = pool.filter(x=>!(x.m.result&&/^\d+-\d+$/.test(x.m.result)));
+  else pool = pool.filter(x=>x.i>=startIdx);
+  const shown = pool.slice(0, count);
+  if(!shown.length){ toast('Brak meczów',true); return; }
+  let lines=['Uczestnik\t'+shown.map(x=>x.m.name+(x.m.result&&/^\d+-\d+$/.test(x.m.result)?` (${x.m.result})`:'')).join('\t')];
+  state.players.forEach(p=>{
+    lines.push(p+'\t'+shown.map(x=>(x.m.bets[p]||'').trim()||'–').join('\t'));
+  });
+  const txt=lines.join('\n');
+  navigator.clipboard.writeText(txt).then(()=>toast('Skopiowano do schowka ✓')).catch(()=>toast('Nie udało się skopiować',true));
+}
+
+// ---- UTIL ----
+function fmt(n){ return (Math.round(n*100)/100).toLocaleString('pl-PL',{minimumFractionDigits:0,maximumFractionDigits:2}); }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function escAttr(s){ return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+function switchTab(v){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));
+  document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id==='view-'+v));
+  render();
+}
+function render(){ renderStageFilter(); renderMatches(); renderByTyper(); renderScreen(); renderLeaders(); renderPlayers(); }
+
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='typer-mistrzostw-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  toast('Dane wyeksportowane ✓');
+}
+function importData(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(d.players&&d.matches){ state=d; save(); render(); toast('Dane wczytane ✓'); } else toast('Zły plik',true);}catch(err){toast('Błąd odczytu',true);} };
+  r.readAsText(f); e.target.value='';
+}
+function resetAll(){
+  if(!confirm('Na pewno wyczyścić WSZYSTKIE wyniki i typy? Tej operacji nie da się cofnąć.'))return;
+  localStorage.removeItem(STORE_KEY); state=load(); filterStage='ALL'; save(); render(); toast('Zresetowano');
+}
+
+render();
+restoreLeaderWidth();
+startCloudSync();
+</script>
+</body>
+</html>
