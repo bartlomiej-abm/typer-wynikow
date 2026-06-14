@@ -64,6 +64,9 @@
   .bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:8px}
   .bet-cell{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
   .bet-cell.hit{border-color:var(--green);background:#15291c}
+  .bet-cell.empty{border-color:var(--red);background:#2a1818}
+  .bet-cell.empty input{border-color:var(--red);color:var(--red)}
+  .bet-cell.empty input::placeholder{color:var(--red);opacity:.8}
   .bet-cell .bn{flex:1;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .bet-cell input{width:48px;padding:5px;text-align:center;font-weight:700;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:5px;font-size:13px}
   table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:10px;overflow:hidden}
@@ -560,7 +563,8 @@ function renderMatches(){
           ${state.players.map(p=>{
             const bet=m.bets[p]||'';
             const hit = m.result&&/^\d+-\d+$/.test(m.result)&&bet.trim()===m.result.trim();
-            return `<div class="bet-cell ${hit?'hit':''}"><span class="bn">${esc(p)}</span><input data-betinput inputmode="text" autocapitalize="off" autocomplete="off" enterkeyhint="next" value="${esc(bet)}" placeholder="0-0" onkeydown="betKeyNav(event)" onchange="setBet(${m.id},'${escAttr(p)}',this.value)"></div>`;
+            const isEmpty = !bet.trim();
+            return `<div class="bet-cell ${hit?'hit':''} ${isEmpty?'empty':''}"><span class="bn">${esc(p)}</span><input data-betinput inputmode="text" autocapitalize="off" autocomplete="off" enterkeyhint="next" value="${esc(bet)}" placeholder="–" onkeydown="betKeyNav(event)" onchange="setBet(${m.id},'${escAttr(p)}',this.value)"></div>`;
           }).join('')}
         </div></div>
       </div>
